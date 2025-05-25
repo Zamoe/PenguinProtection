@@ -1,0 +1,5 @@
+{
+  "projects": {
+    "default": "penguin-deterrent-64225" // Sets the default Firebase project ID used for deployment
+  }
+}
