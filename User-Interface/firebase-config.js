@@ -1,3 +1,7 @@
+<!-- Muhammed Vally -->
+<!-- Student Number : VLLMUH015 -->
+<!--2025-05-25 -->
+
 // firebase-config.js
 
 // Firebase configuration object for the Penguard project
