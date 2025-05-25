@@ -1,1 +1,67 @@
-index.html hrer
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penguard Dashboard</title>
+  <link rel="stylesheet" href="style.css" /> <!-- external CSS file -->
+</head>
+<body>
+
+  <!-- this is the popup alert for when a new predator log is added -->
+  <div id="new-log-alert" style="
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 9999;
+    font-family: sans-serif;
+  ">
+    🦊 New predator detection added!
+  </div>
+
+  <!-- shows device status (ESP32 + Pi) -->
+  <div id="device-status">
+    <strong>Device Status:</strong><br>
+    ESP32: <span id="esp32-status">Loading...</span><br>
+    Raspberry Pi: <span id="pi-status">Loading...</span>
+  </div>
+
+  <div class="overlay">
+    <img class="logo" src="dehoop-logo.png" alt="De Hoop Logo" /> <!-- logo -->
+
+    <h1>Penguard – Live Predator Detection Feed</h1>
+
+    <!-- main nav buttons -->
+    <div class="button-container">
+      <button class="dashboard-button" onclick="location.href='graph.html'">View Graphical Data</button>
+      <button class="dashboard-button" onclick="location.href='photo-library.html'">View Predator Pictures</button>
+      <button class="dashboard-button" onclick="triggerDeterrent()">Trigger Deterrent</button>
+      <button class="dashboard-button" onclick="location.href='predator-logs.html'">View Predator Logs</button>
+    </div>
+  </div>
+
+  <!-- Firebase core SDKs (needed for Firebase to work) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    // redirect to login if access flag isn't set
+    if (localStorage.getItem("access_granted") !== "yes") {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <!-- Firebase config and main dashboard logic -->
+  <script src="firebase-config.js"></script>
+  <script src="main.js" defer></script>
+
+</body>
+</html>
+
