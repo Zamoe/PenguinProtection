@@ -1,1 +1,275 @@
+<!-- Muhammed Vally -->
+<!-- Student Number : VLLMUH015 -->
+<!--2025-05-25 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detection Graph</title>
+
+  <!-- Load Chart.js for plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+  <!-- Firebase SDKs for Realtime DB access -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <style>
+    /* Basic styling and background */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      text-align: center;
+      background: url('penguin-bg.png') no-repeat center center fixed;
+      background-size: cover;
+      color: #000;
+    }
+
+    /* Container for content */
+    .overlay {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 900px;
+      margin: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Dropdown styling */
+    select {
+      margin: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    /* Chart area */
+    canvas {
+      max-width: 100%;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title and filters -->
+  <div class="overlay">
+    <h1>📊 Predator Detection Logs</h1>
+
+    <!-- Animal filter dropdown -->
+    <label>Filter by Animal:
+      <select id="animalFilter">
+        <option value="all">All</option>
+        <option value="Leopard">Leopard</option>
+        <option value="Honey Badger">Honey Badger</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+
+    <!-- Time range filter dropdown -->
+    <label>Time Range:
+      <select id="timeFilter">
+        <option value="day">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="year">This Year</option>
+      </select>
+    </label>
+
+    <!-- Chart element -->
+    <canvas id="detectionChart" height="100"></canvas>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize Firebase Realtime Database
+      const db = firebase.database();
+
+      // Get canvas context for Chart.js
+      const ctx = document.getElementById("detectionChart").getContext("2d");
+
+      // Set up bar chart
+      const chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: [],
+          datasets: [{
+            label: "Detections",
+            data: [],
+            backgroundColor: "#007BFF"
+          }]
+        },
+        options: {
+          parsing: false,
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'hour', // default unit
+                displayFormats: {
+                  hour: 'MMM d, ha',
+                  day: 'MMM d',
+                  month: 'MMM yyyy',
+                  year: 'yyyy'
+                }
+              },
+              title: {
+                display: true,
+                text: 'Time'
+              },
+              ticks: {
+                source: 'auto',
+                autoSkip: false,
+                maxRotation: 45,
+                minRotation: 45
+              },
+              min: null,
+              max: null
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Detections'
+              }
+            }
+          }
+        }
+      });
+
+      // Get appropriate time unit for filter
+      function getTimeUnit(filter) {
+        if (filter === "day") return "hour";
+        if (filter === "week") return "day";
+        if (filter === "month") return "day";
+        if (filter === "year") return "month";
+        return "hour";
+      }
+
+      // Filter entries based on animal and time range
+      function getFilteredData(entries, animalFilter, timeFilter) {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        return entries.filter(entry => {
+          const ts = entry.timestamp;
+          if (!ts) return false;
+
+          const timestamp = new Date(ts);
+          if (isNaN(timestamp)) return false;
+
+          // Check if timestamp is in range
+          let timeOK = false;
+          if (timeFilter === "day") {
+            timeOK = timestamp >= todayStart && timestamp < todayEnd;
+          } else if (timeFilter === "week") {
+            const diff = now - timestamp;
+            timeOK = diff <= 7 * 86400000; // 7 days
+          } else if (timeFilter === "month") {
+            timeOK = timestamp.getMonth() === now.getMonth() && timestamp.getFullYear() === now.getFullYear();
+          } else if (timeFilter === "year") {
+            timeOK = timestamp.getFullYear() === now.getFullYear();
+          }
+
+          // Check if animal matches filter
+          const animal = (entry.animal || "").toLowerCase();
+          let animalOK = false;
+          if (animalFilter === "all") animalOK = true;
+          else if (animalFilter === "other") animalOK = !(animal.includes("leopard") || animal.includes("honey"));
+          else animalOK = animal.includes(animalFilter.toLowerCase());
+
+          return timeOK && animalOK;
+        });
+      }
+
+      // Group entries by selected time unit
+      function groupByTime(entries, unit) {
+        const counts = {};
+        for (const entry of entries) {
+          const date = new Date(entry.timestamp);
+          if (isNaN(date)) continue;
+
+          let rounded;
+          if (unit === "hour") {
+            rounded = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
+          } else if (unit === "day") {
+            rounded = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          } else if (unit === "month") {
+            rounded = new Date(date.getFullYear(), date.getMonth());
+          }
+
+          const key = rounded.toISOString();
+          counts[key] = (counts[key] || 0) + 1;
+        }
+
+        // Convert counts to array for chart
+        return Object.entries(counts)
+          .map(([key, value]) => ({ x: new Date(key), y: value }))
+          .sort((a, b) => a.x - b.x);
+      }
+
+      // Load and display data from Firebase
+      function loadDeterrentData() {
+        const animalFilter = document.getElementById("animalFilter").value;
+        const timeFilter = document.getElementById("timeFilter").value;
+        const timeUnit = getTimeUnit(timeFilter);
+
+        // Read data once from Firebase
+        db.ref("Deterrents").once("value", (snapshot) => {
+          const data = snapshot.val();
+          if (!data) return;
+
+          const entries = Object.values(data);
+          const filtered = getFilteredData(entries, animalFilter, timeFilter);
+          const grouped = groupByTime(filtered, timeUnit);
+
+          chart.data.labels = grouped.map(d => d.x);
+          chart.data.datasets[0].data = grouped;
+          chart.options.scales.x.time.unit = timeUnit;
+
+          // Set chart x-axis range
+          if (grouped.length > 0) {
+            const first = grouped[0].x;
+            const last = grouped[grouped.length - 1].x;
+            let min = new Date(first);
+            let max = new Date(last);
+
+            if (timeUnit === "hour") {
+              min.setHours(0);
+              max.setHours(23);
+              max.setMinutes(59);
+            } else if (timeUnit === "day") {
+              min.setDate(min.getDate() - 3);
+              max.setDate(max.getDate() + 6);
+            } else if (timeUnit === "month") {
+              min.setMonth(min.getMonth() - 3);
+              max.setMonth(max.getMonth() + 3);
+            } else if (timeUnit === "year") {
+              min.setFullYear(min.getFullYear() - 1);
+              max.setFullYear(max.getFullYear() + 1);
+            }
+
+            chart.options.scales.x.min = min;
+            chart.options.scales.x.max = max;
+          } else {
+            chart.options.scales.x.min = null;
+            chart.options.scales.x.max = null;
+          }
+
+          chart.update(); // redraw chart
+        });
+      }
+
+      // Add filter event listeners
+      document.getElementById("animalFilter").addEventListener("change", loadDeterrentData);
+      document.getElementById("timeFilter").addEventListener("change", loadDeterrentData);
+
+      // Load data on page load
+      loadDeterrentData();
+    });
+  </script>
+</body>
+</html>
 
