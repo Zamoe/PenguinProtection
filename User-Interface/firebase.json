@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "public", // Folder to deploy (contains HTML/CSS/JS files)
+    "ignore": [
+      "firebase.json",      // Don't upload this config file
+      "**/.*",              // Ignore hidden files (e.g., .git, .env)
+      "**/node_modules/**" // Ignore node_modules folders
+    ]
+  }
+}
