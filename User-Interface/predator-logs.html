@@ -1,0 +1,97 @@
+<!-- Muhammed Vally (VLLMUH015) - 2025-05-25 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predator Logs</title>
+
+  <!-- External stylesheet for UI -->
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Style for the delete (trash) button */
+    .delete-btn {
+      float: right;
+      cursor: pointer;
+      color: red;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main content container -->
+  <div class="overlay">
+    <h1>🦊 Predator Logs</h1>
+
+    <!-- Log display area -->
+    <div id="log-entries" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+
+    <!-- Back to dashboard button -->
+    <button onclick="location.href='index.html'" style="margin-top: 2rem;">⬅ Back to Dashboard</button>
+  </div>
+
+  <!-- Firebase SDKs for Realtime DB -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const db = firebase.database(); // Firebase DB reference
+    const container = document.getElementById("log-entries");
+    container.innerHTML = "Loading logs...";
+
+    // Delete a log entry from Firebase
+    function deleteLog(id) {
+      const confirmDelete = confirm("🗑️ Are you sure you want to remove this data?");
+      if (!confirmDelete) return;
+
+      db.ref("Deterrents/" + id).remove()
+        .then(() => {
+          alert("✅ Log deleted.");
+          location.reload(); // refresh to reflect deletion
+        })
+        .catch((error) => {
+          alert("❌ Failed to delete log: " + error.message);
+        });
+    }
+
+    // Fetch all logs from "Deterrents" node
+    db.ref("Deterrents").once("value", (snapshot) => {
+      const data = snapshot.val();
+      container.innerHTML = ""; // clear loading text
+
+      if (!data) {
+        container.innerHTML = "<p>No logs available.</p>";
+        return;
+      }
+
+      // Filter and sort logs by newest timestamp first
+      const entries = Object.entries(data)
+        .filter(([id, entry]) => entry.timestamp)
+        .sort((a, b) => new Date(b[1].timestamp) - new Date(a[1].timestamp));
+
+      // Create a card for each log
+      for (const [id, entry] of entries) {
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "1rem";
+        div.style.borderRadius = "8px";
+        div.style.backgroundColor = "#fff";
+        div.style.position = "relative";
+
+        // Fill card with animal info, time, image, and delete button
+        div.innerHTML = `
+          <span class="delete-btn" onclick="deleteLog('${id}')">🗑️</span>
+          <strong>Animal:</strong> ${entry.animal || "Unknown"}<br>
+          <strong>Time:</strong> ${new Date(entry.timestamp).toLocaleString()}<br>
+          <img src="${entry.image_url || "#"}" alt="${entry.animal}" style="max-width: 200px; margin-top: 10px;" />
+        `;
+
+        container.appendChild(div); // add card to page
+      }
+    });
+  </script>
+</body>
+</html>
