@@ -1,0 +1,125 @@
+<!-- Muhammed Vally (VLLMUH015) - 2025-05-25 -->
+<!-- Student Number : VLLMUH015 -->
+<!--  2025-05-25 -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Predator Photo Library</title>
+
+  <!-- Firebase SDKs for app, database, and storage -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <style>
+    /* Page layout and styling */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      padding: 2rem;
+    }
+
+    /* Main heading */
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    /* Gallery layout */
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    /* Card styling for each image */
+    .photo-card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      width: 220px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    /* Image inside card */
+    .photo-card img {
+      width: 100%;
+      height: auto;
+    }
+
+    /* Text details inside card */
+    .photo-details {
+      padding: 0.5rem;
+    }
+
+    /* Text spacing */
+    .photo-details p {
+      margin: 0.25rem 0;
+    }
+
+    /* Download button style */
+    .download-btn {
+      display: block;
+      margin: 0.5rem;
+      padding: 0.5rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Page title -->
+  <h1>Predator Pictures</h1>
+
+  <!-- Image container -->
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    // Get a reference to the "Deterrents" node in Firebase DB
+    const db = firebase.database().ref("Deterrents");
+
+    // Fetch data once from the database
+    db.once('value').then(snapshot => {
+      const data = snapshot.val();
+      const gallery = document.getElementById('gallery');
+
+      // If no data found, show message
+      if (!data) {
+        gallery.innerHTML = "<p>No images found.</p>";
+        return;
+      }
+
+      // Loop through each entry in the database
+      for (let key in data) {
+        const item = data[key];
+
+        // Skip if image URL doesn't exist
+        if (!item.image_url) continue;
+
+        // Create a card element for each image
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+
+        // Fill card with image, details, and download button
+        card.innerHTML = `
+          <img src="${item.image_url}" alt="${item.animal || 'Unknown Animal'}" />
+          <div class="photo-details">
+            <p><strong>Animal:</strong> ${item.animal || 'Unknown'}</p>
+            <p><strong>Timestamp:</strong> ${new Date(item.timestamp).toLocaleString()}</p>
+            <a class="download-btn" href="${item.image_url}" download>Download</a>
+          </div>
+        `;
+
+        // Add card to gallery container
+        gallery.appendChild(card);
+      }
+    });
+  </script>
+</body>
+</html>
