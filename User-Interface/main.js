@@ -1,4 +1,6 @@
-
+<!-- Muhammed Vally (VLLMUH015) - 2025-05-25 -->
+<!-- Student Number : VLLMUH015 -->
+<!--  2025-05-25 -->
 window.onload = function () { 
   const db = firebase.database();
   const TIMEOUT_MS = 60 * 1000; // Timeout after 1 minute
