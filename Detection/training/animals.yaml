@@ -1,0 +1,13 @@
+train: ../datasets/animals/train/images
+val: ../datasets/animals/valid/images
+test: ../datasets/animals/test/images
+
+nc: 1
+names: ['animal']
+
+roboflow:
+  workspace: penguin-jlzze
+  project: zm-wild-animals
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/penguin-jlzze/zm-wild-animals/dataset/1
